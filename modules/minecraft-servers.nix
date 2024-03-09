@@ -383,7 +383,7 @@ in
                   Restart = conf.restart;
                   WorkingDirectory = "${cfg.dataDir}/${name}";
                   User = "minecraft";
-                  Type = "forking";
+                  # Type = "forking";
                   GuessMainPID = true;
                   RuntimeDirectory = "minecraft";
                   RuntimeDirectoryPreserve = "yes";
