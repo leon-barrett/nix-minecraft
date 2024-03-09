@@ -339,8 +339,7 @@ in
         systemd.services = mapAttrs'
           (name: conf:
             let
-              tmux = "${getBin pkgs.tmux}/bin/tmux";
-              tmuxSock = "${cfg.runDir}/${name}.sock";
+              mcrcon = "${getBin pkgs.mcrcon}/bin/mcrcon -P ${conf.serverProperties."rcon.port"} -p ${conf.serverProperties."rcon.password"}";
 
               symlinks = normalizeFiles ({
                 "eula.txt".value = { eula = true; };
@@ -353,11 +352,7 @@ in
 
               startScript = pkgs.writeScript "minecraft-start-${name}" ''
                 #!${pkgs.runtimeShell}
-                ${tmux} -S ${tmuxSock} new -d ${getExe conf.package} ${conf.jvmOpts}
-
-                # HACK: PrivateUsers makes every user besides root/minecraft `nobody`, so this restores old tmux behavior
-                # See https://github.com/Infinidoge/nix-minecraft/issues/5
-                ${tmux} -S ${tmuxSock} server-access -aw nobody
+                ${getExe conf.package} ${conf.jvmOpts}
               '';
 
               stopScript = pkgs.writeScript "minecraft-stop-${name}" ''
@@ -367,7 +362,7 @@ in
                   exit 0
                 fi
 
-                ${tmux} -S ${tmuxSock} send-keys stop Enter
+                ${mcrcon} stop
               '';
             in
             {
