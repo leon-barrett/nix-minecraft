@@ -462,10 +462,6 @@ in
                     ${mkFiles}
                   '';
 
-                postStart = ''
-                  ${pkgs.coreutils}/bin/chmod 660 ${tmuxSock}
-                '';
-
                 postStop =
                   let
                     rmSymlinks = pkgs.writeShellScript "minecraft-server-${name}-rm-symlinks"
