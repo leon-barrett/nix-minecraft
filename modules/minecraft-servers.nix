@@ -339,7 +339,7 @@ in
         systemd.services = mapAttrs'
           (name: conf:
             let
-              mcrcon = "${getBin pkgs.mcrcon}/bin/mcrcon -P ${conf.serverProperties."rcon.port"} -p ${conf.serverProperties."rcon.password"}";
+              mcrcon = "${getBin pkgs.mcrcon}/bin/mcrcon -P ${toString (conf.serverProperties."rcon.port")} -p ${conf.serverProperties."rcon.password"}";
 
               symlinks = normalizeFiles ({
                 "eula.txt".value = { eula = true; };
