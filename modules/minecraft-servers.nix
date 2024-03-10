@@ -328,10 +328,11 @@ in
           }
         ] ++
         (mapAttrsToList (name: conf: {
-          assertion = (conf.adminControlType == "rcon" &&
-                       (!(conf.serverProperties.enable-rcon or false) ||
-                        !(conf.serverProperties ? "rcon.port") ||
-                        !(conf.serverProperties ? "rcon.password")));
+          assertion = (if conf.adminControlType == "rcon"
+                       then (!(conf.serverProperties.enable-rcon or false) ||
+                             !(conf.serverProperties ? "rcon.port") ||
+                             !(conf.serverProperties ? "rcon.password"))
+                       else true);
           message = ''Server ${name} is using adminControlType rcon, so its
                       serverProperties "enable-rcon", "rcon.port", and
                       "rcon.password" must be set.'';
