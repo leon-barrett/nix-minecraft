@@ -200,6 +200,20 @@ in
             true.
           '';
 
+          adminControlType = mkOption {
+            type = types.enum [ "tmux" "rcon" ];
+            default = "tmux";
+            description = ''
+              How the systemd service unit controls the service.
+              * tmux: The standard method, which lets you connect to the tmux
+                session to interact with the server, but it prevents the
+                server's logs from appearing in journalctl.
+              * rcon: An alternate method, which requires that the server have
+                the rcon remote control port enabled and does make logs visible
+                in journalctl.
+            '';
+          };
+
           whitelist = mkOption {
             type =
               let
@@ -312,7 +326,16 @@ in
               lib.all (x: x == 1) counts;
             message = "Multiple servers are set to use the same port. Change one to use a different port.";
           }
-        ];
+        ] ++
+        (mapAttrsToList (name: conf: {
+          assertion = (conf.adminControlType == "rcon" &&
+                       (!(conf.serverProperties.enable-rcon or false) ||
+                        !(conf.serverProperties ? "rcon.port") ||
+                        !(conf.serverProperties ? "rcon.password")));
+          message = ''Server ${name} is using adminControlType rcon, so its
+                      serverProperties "enable-rcon", "rcon.port", and
+                      "rcon.password" must be set.'';
+        }) servers);
 
         networking.firewall =
           let
