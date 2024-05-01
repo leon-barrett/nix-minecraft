@@ -80,7 +80,8 @@
           paper-server
           velocity-server
           minecraft-server
-          nix-modrinth-prefetch;
+          nix-modrinth-prefetch
+          minecraft-server-hibernation;
       };
 
       checks = mkTests (pkgs.extend self.outputs.overlays.default) // packages;
