@@ -363,6 +363,8 @@ in
         systemd.services = mapAttrs'
           (name: conf:
             let
+              tmux = "${getBin pkgs.tmux}/bin/tmux";
+              tmuxSock = "${cfg.runDir}/${name}.sock";
               mcrcon = "${getBin pkgs.mcrcon}/bin/mcrcon -P ${toString (conf.serverProperties."rcon.port")} -p ${conf.serverProperties."rcon.password"}";
 
               symlinks = normalizeFiles ({
@@ -374,20 +376,46 @@ in
                 "server.properties".value = conf.serverProperties;
               } // conf.files);
 
-              startScript = pkgs.writeScript "minecraft-start-${name}" ''
-                #!${pkgs.runtimeShell}
-                ${getExe conf.package} ${conf.jvmOpts}
-              '';
+              scriptsTmux = {
+                startScript = pkgs.writeScript "minecraft-start-${name}" ''
+                  #!${pkgs.runtimeShell}
+                  ${tmux} -S ${tmuxSock} new -d ${getExe conf.package} ${conf.jvmOpts}
 
-              stopScript = pkgs.writeScript "minecraft-stop-${name}" ''
-                #!${pkgs.runtimeShell}
+                  # HACK: PrivateUsers makes every user besides root/minecraft `nobody`, so this restores old tmux behavior
+                  # See https://github.com/Infinidoge/nix-minecraft/issues/5
+                  ${tmux} -S ${tmuxSock} server-access -aw nobody
+                '';
 
-                if ! [ -d "/proc/$1" ]; then
-                  exit 0
-                fi
+                stopScript = pkgs.writeScript "minecraft-stop-${name}" ''
+                  #!${pkgs.runtimeShell}
 
-                ${mcrcon} stop
-              '';
+                  if ! [ -d "/proc/$1" ]; then
+                    exit 0
+                  fi
+
+                  ${tmux} -S ${tmuxSock} send-keys stop Enter
+                '';
+              };
+
+              scriptsRcon = {
+                startScript = pkgs.writeScript "minecraft-start-${name}" ''
+                  #!${pkgs.runtimeShell}
+                  ${getExe conf.package} ${conf.jvmOpts}
+                '';
+
+                stopScript = pkgs.writeScript "minecraft-stop-${name}" ''
+                  #!${pkgs.runtimeShell}
+
+                  if ! [ -d "/proc/$1" ]; then
+                    exit 0
+                  fi
+
+                  ${mcrcon} stop
+                '';
+              };
+
+              scripts = if conf.adminControlType == "tmux" then scriptsTmux else scriptsRcon;
+
             in
             {
               name = "minecraft-server-${name}";
@@ -402,8 +430,8 @@ in
                 startLimitBurst = 5;
 
                 serviceConfig = {
-                  ExecStart = "${startScript}";
-                  ExecStop = "${stopScript} $MAINPID";
+                  ExecStart = "${scripts.startScript}";
+                  ExecStop = "${scripts.stopScript} $MAINPID";
                   Restart = conf.restart;
                   WorkingDirectory = "${cfg.dataDir}/${name}";
                   User = "minecraft";
