@@ -2198,5 +2198,20 @@
     "libraries": [
       "net.fabricmc:intermediary:1.21.9-pre4"
     ]
+  },
+  "1.21.10-rc1": {
+    "libraries": [
+      "net.fabricmc:intermediary:1.21.10-rc1"
+    ]
+  },
+  "1.21.9": {
+    "libraries": [
+      "net.fabricmc:intermediary:1.21.9"
+    ]
+  },
+  "1.21.9-rc1": {
+    "libraries": [
+      "net.fabricmc:intermediary:1.21.9-rc1"
+    ]
   }
 }
